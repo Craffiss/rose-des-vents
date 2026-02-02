@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rose des Vents 360° - Analyseur Météo</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Karla:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-blue: #4A90E2;
+            --deep-blue: #2E5C8A;
+            --cloud-white: #F8FBFF;
+            --wind-gray: #8B9DAF;
+            --storm-dark: #1E3A5F;
+            --accent-cyan: #00D4FF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Karla', sans-serif;
+            background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 50%, #7DD3FC 100%);
+            min-height: 100vh;
+            color: var(--storm-dark);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: var(--storm-dark);
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--deep-blue);
+            font-weight: 300;
+        }
+        
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(46, 92, 138, 0.15);
+            margin-bottom: 30px;
+        }
+        
+        .dropzone {
+            border: 3px dashed var(--sky-blue);
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(186, 230, 253, 0.2) 0%, rgba(224, 242, 254, 0.3) 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .dropzone:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.2);
+        }
+        
+        .dropzone.active {
+            border-color: var(--accent-cyan);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(74, 144, 226, 0.15) 100%);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .dropzone h3 {
+            font-size: 1.5rem;
+            color: var(--deep-blue);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .dropzone p {
+            color: var(--wind-gray);
+            font-size: 0.95rem;
+        }
+        
+        .date-filters {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .input-group label {
+            font-weight: 500;
+            color: var(--deep-blue);
+            font-size: 0.9rem;
+        }
+        
+        .input-group input {
+            padding: 12px 16px;
+            border: 2px solid rgba(74, 144, 226, 0.3);
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            background: white;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--sky-blue);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        
+        .btn-reset {
+            padding: 12px 20px;
+            background: rgba(74, 144, 226, 0.15);
+            border: 2px solid rgba(74, 144, 226, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Karla', sans-serif;
+            font-weight: 500;
+            color: var(--deep-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-reset:hover {
+            background: rgba(74, 144, 226, 0.25);
+        }
+        
+        .btn-generate {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--sky-blue) 0%, var(--deep-blue) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Karla', sans-serif;
+            box-shadow: 0 10px 25px rgba(74, 144, 226, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(74, 144, 226, 0.4);
+        }
+        
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .info-banner {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(74, 144, 226, 0.1) 100%);
+            border-left: 4px solid var(--accent-cyan);
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--deep-blue);
+            margin-bottom: 20px;
+        }
+        
+        .error {
+            background: #FEE2E2;
+            border: 2px solid #EF4444;
+            color: #991B1B;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        #results {
+            display: none;
+        }
+        
+        #results.show {
+            display: block;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .results-header h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            color: var(--storm-dark);
+        }
+        
+        .btn-download {
+            padding: 12px 24px;
+            background: var(--accent-cyan);
+            color: var(--storm-dark);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Karla', sans-serif;
+        }
+        
+        .btn-download:hover {
+            background: #00BFEA;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(46, 92, 138, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #chart {
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(186, 230, 253, 0.3) 0%, rgba(224, 242, 254, 0.4) 100%);
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid var(--sky-blue);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--wind-gray);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            color: var(--storm-dark);
+            font-weight: 700;
+        }
+        
+        .stat-unit {
+            font-size: 1rem;
+            color: var(--wind-gray);
+            font-weight: 400;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--deep-blue);
+            font-size: 0.9rem;
+        }
+        
+        footer a {
+            color: var(--sky-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .date-filters {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌹 Rose des Vents 360°</h1>
+            <p class="subtitle">Analyseur météorologique professionnel</p>
+        </header>
+
+        <div class="main-card">
+            <div class="dropzone" id="dropzone">
+                <div class="upload-icon">☁️</div>
+                <h3 id="dropzone-title">Glissez votre fichier CSV ici</h3>
+                <p>ou cliquez pour parcourir (Format Infoclimat)</p>
+                <input type="file" id="fileInput" accept=".csv" style="display: none;">
+            </div>
+
+            <div class="date-filters">
+                <div class="input-group">
+                    <label>📅 Date de début (optionnel)</label>
+                    <input type="date" id="dateDebut">
+                </div>
+                <div class="input-group">
+                    <label>📅 Date de fin (optionnel)</label>
+                    <input type="date" id="dateFin">
+                </div>
+                <button class="btn-reset" id="btnReset">🔄 Réinitialiser</button>
+            </div>
+
+            <div class="info-banner">
+                💡 <strong>Astuce :</strong> Laissez les dates vides pour analyser toute la période du fichier, ou sélectionnez une période spécifique
+            </div>
+
+            <div class="error" id="errorBox"></div>
+
+            <button class="btn-generate" id="btnGenerate" disabled>
+                ⏳ Sélectionnez un fichier CSV
+            </button>
+        </div>
+
+        <div id="results" class="main-card">
+            <div class="results-header">
+                <h2>📊 Résultats</h2>
+                <button class="btn-download" id="btnDownload">💾 Télécharger JPEG</button>
+            </div>
+
+            <div class="chart-container">
+                <svg id="chart" viewBox="0 0 800 800"></svg>
+            </div>
+
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+
+        <footer>
+            <p>Données: <a href="https://www.infoclimat.fr" target="_blank">Infoclimat</a> / Météo-France</p>
+            <p style="margin-top: 10px;">Licence Ouverte / Open License</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentFile = null;
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnReset = document.getElementById('btnReset');
+        const btnDownload = document.getElementById('btnDownload');
+        const dateDebut = document.getElementById('dateDebut');
+        const dateFin = document.getElementById('dateFin');
+        const errorBox = document.getElementById('errorBox');
+        const results = document.getElementById('results');
+        const dropzoneTitle = document.getElementById('dropzone-title');
+
+        // Gestion drag & drop
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('active');
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('active');
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('active');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                showError('Veuillez sélectionner un fichier CSV');
+                return;
+            }
+            currentFile = file;
+            dropzoneTitle.textContent = `📄 ${file.name}`;
+            btnGenerate.textContent = '🚀 Générer la Rose des Vents';
+            btnGenerate.disabled = false;
+            hideError();
+        }
+
+        btnReset.addEventListener('click', () => {
+            dateDebut.value = '';
+            dateFin.value = '';
+        });
+
+        btnGenerate.addEventListener('click', () => {
+            if (!currentFile) {
+                showError('Aucun fichier sélectionné');
+                return;
+            }
+            parseCSV();
+        });
+
+        btnDownload.addEventListener('click', () => {
+            const svg = document.getElementById('chart');
+            const svgData = new XMLSerializer().serializeToString(svg);
+            
+            // Créer un canvas pour convertir SVG en JPEG
+            const canvas = document.createElement('canvas');
+            canvas.width = 2400;  // Haute résolution (3x)
+            canvas.height = 2400;
+            const ctx = canvas.getContext('2d');
+            
+            // Fond blanc pour le JPEG
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Convertir SVG en image
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                
+                // Télécharger en JPEG
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = `rose_des_vents_${Date.now()}.jpg`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                }, 'image/jpeg', 0.95); // Qualité 95%
+            };
+            
+            img.src = url;
+        });
+
+        function showError(message) {
+            errorBox.textContent = `⚠️ ${message}`;
+            errorBox.classList.add('show');
+        }
+
+        function hideError() {
+            errorBox.classList.remove('show');
+        }
+
+        async function parseCSV() {
+            const debut = dateDebut.value;
+            const fin = dateFin.value;
+
+            // Validation des dates
+            if ((debut && !fin) || (!debut && fin)) {
+                showError('Veuillez renseigner à la fois la date de début ET la date de fin, ou laisser les deux vides');
+                return;
+            }
+
+            if (debut && fin && debut > fin) {
+                showError('La date de début doit être antérieure à la date de fin');
+                return;
+            }
+
+            try {
+                const text = await currentFile.text();
+                const lines = text.split('\n');
+
+                // Trouver l'en-tête
+                let headerIndex = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith('station_id')) {
+                        headerIndex = i;
+                        break;
+                    }
+                }
+
+                const headers = lines[headerIndex].split(';');
+                const dirIndex = headers.indexOf('vent_direction');
+                const tempIndex = headers.indexOf('temperature');
+                const pluieIndex = headers.indexOf('pluie_1h');
+                const dateIndex = headers.indexOf('dh_utc');
+
+                // Extraire le nom de la station
+                let station = 'Station';
+                for (let i = 0; i < headerIndex; i++) {
+                    if (lines[i].startsWith('# ') && lines[i].includes(':')) {
+                        station = lines[i].split(':')[1].trim();
+                        break;
+                    }
+                }
+
+                // Compteur
+                const compteur = {};
+                for (let i = 0; i <= 360; i += 10) {
+                    compteur[i] = 0;
+                }
+
+                let tempSum = 0, tempMin = Infinity, tempMax = -Infinity;
+                let pluieSum = 0;
+                let count = 0;
+
+                // Parser les données
+                for (let i = headerIndex + 2; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line || line.startsWith('#')) continue;
+
+                    const cols = line.split(';');
+
+                    // Filtrer par dates
+                    if (debut && fin) {
+                        const date = cols[dateIndex];
+                        if (date < debut || date > fin + ' 23:59:59') {
+                            continue;
+                        }
+                    }
+
+                    const dir = parseInt(cols[dirIndex]);
+                    const temp = parseFloat(cols[tempIndex]);
+                    const pluie = parseFloat(cols[pluieIndex]);
+
+                    if (!isNaN(dir)) {
+                        const dirKey = dir === 360 ? 0 : dir;
+                        if (compteur.hasOwnProperty(dirKey)) {
+                            compteur[dirKey]++;
+                        }
+                    }
+
+                    if (!isNaN(temp)) {
+                        tempSum += temp;
+                        tempMin = Math.min(tempMin, temp);
+                        tempMax = Math.max(tempMax, temp);
+                    }
+
+                    if (!isNaN(pluie)) {
+                        pluieSum += pluie;
+                    }
+
+                    count++;
+                }
+
+                if (count === 0) {
+                    showError('Aucune donnée trouvée pour cette période. Vérifiez vos dates.');
+                    return;
+                }
+
+                compteur[0] += compteur[360];
+
+                const stats = {
+                    temp_moy: tempSum / count,
+                    temp_min: tempMin,
+                    temp_max: tempMax,
+                    pluie_tot: pluieSum,
+                    total_mesures: count,
+                    periode: debut && fin ? `${debut} → ${fin}` : 'Période complète'
+                };
+
+                hideError();
+                generateChart(compteur, stats, station);
+
+            } catch (err) {
+                showError(`Erreur lors de la lecture du fichier: ${err.message}`);
+            }
+        }
+
+        function generateChart(compteur, stats, station) {
+            // Configuration
+            const centerX = 400;
+            const centerY = 400;
+            const maxRadius = 300;
+            
+            // Préparer les données dans l'ordre correct (0° à 350° par pas de 10°)
+            const directions = [];
+            const frequences = [];
+            for (let d = 0; d < 360; d += 10) {
+                directions.push(d);
+                frequences.push(compteur[d]);
+            }
+
+            // Trouver la valeur max pour normaliser
+            const maxFreq = Math.max(...frequences);
+            
+            console.log('Max fréquence:', maxFreq);
+            console.log('Données:', directions.map((d, i) => `${d}°=${frequences[i]}`).join(', '));
+
+            // Créer le SVG
+            const svg = document.getElementById('chart');
+            svg.innerHTML = ''; // Vider
+
+            // Ajouter un titre
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', centerX);
+            title.setAttribute('y', 40);
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('font-size', '24');
+            title.setAttribute('font-weight', 'bold');
+            title.setAttribute('fill', '#1E3A5F');
+            title.textContent = `Rose des Vents - ${station}`;
+            svg.appendChild(title);
+
+            const subtitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subtitle.setAttribute('x', centerX);
+            subtitle.setAttribute('y', 70);
+            subtitle.setAttribute('text-anchor', 'middle');
+            subtitle.setAttribute('font-size', '16');
+            subtitle.setAttribute('fill', '#4A90E2');
+            subtitle.textContent = stats.periode;
+            svg.appendChild(subtitle);
+
+            // Dessiner les cercles concentriques (grille)
+            const numCircles = 5;
+            for (let i = 1; i <= numCircles; i++) {
+                const radius = (maxRadius / numCircles) * i;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', centerX);
+                circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', radius);
+                circle.setAttribute('fill', 'none');
+                circle.setAttribute('stroke', '#D1D5DB');
+                circle.setAttribute('stroke-width', '1');
+                svg.appendChild(circle);
+
+                // Ajouter les valeurs de fréquence
+                const value = Math.round((maxFreq / numCircles) * i);
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', centerX + 5);
+                label.setAttribute('y', centerY - radius + 5);
+                label.setAttribute('font-size', '12');
+                label.setAttribute('fill', '#6B7280');
+                label.setAttribute('font-family', 'JetBrains Mono, monospace');
+                label.textContent = value;
+                svg.appendChild(label);
+            }
+
+            // Dessiner les lignes radiales (axes tous les 10°)
+            for (let angle = 0; angle < 360; angle += 10) {
+                const rad = (angle) * Math.PI / 180; // 0° = haut, sens horaire
+                const x2 = centerX + maxRadius * Math.sin(rad);
+                const y2 = centerY - maxRadius * Math.cos(rad);
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', centerX);
+                line.setAttribute('y1', centerY);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', angle % 30 === 0 ? '#9CA3AF' : '#E5E7EB');
+                line.setAttribute('stroke-width', angle % 30 === 0 ? '1.5' : '0.5');
+                svg.appendChild(line);
+
+                // Ajouter les labels tous les 10°
+                const labelDist = maxRadius + 25;
+                const labelX = centerX + labelDist * Math.sin(rad);
+                const labelY = centerY - labelDist * Math.cos(rad);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', labelX);
+                label.setAttribute('y', labelY);
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('dominant-baseline', 'middle');
+                label.setAttribute('font-size', angle % 30 === 0 ? '14' : '11');
+                label.setAttribute('font-weight', angle % 30 === 0 ? 'bold' : 'normal');
+                label.setAttribute('fill', angle % 30 === 0 ? '#1E3A5F' : '#6B7280');
+                label.setAttribute('font-family', 'JetBrains Mono, monospace');
+                label.textContent = `${angle}`;
+                svg.appendChild(label);
+            }
+
+            // Créer le polygone de la rose des vents
+            const points = [];
+            directions.forEach((angle, i) => {
+                const freq = frequences[i];
+                const normalizedRadius = maxFreq > 0 ? (freq / maxFreq) * maxRadius : 0;
+                const rad = (angle) * Math.PI / 180; // 0° = haut, sens horaire
+                const x = centerX + normalizedRadius * Math.sin(rad);
+                const y = centerY - normalizedRadius * Math.cos(rad);
+                points.push(`${x},${y}`);
+            });
+
+            // Fermer le polygone (revenir au début)
+            const firstAngle = directions[0];
+            const firstFreq = frequences[0];
+            const firstNormalizedRadius = maxFreq > 0 ? (firstFreq / maxFreq) * maxRadius : 0;
+            const firstRad = (firstAngle) * Math.PI / 180;
+            const firstX = centerX + firstNormalizedRadius * Math.sin(firstRad);
+            const firstY = centerY - firstNormalizedRadius * Math.cos(firstRad);
+            points.push(`${firstX},${firstY}`);
+
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', points.join(' '));
+            polygon.setAttribute('fill', 'rgba(74, 144, 226, 0.6)');
+            polygon.setAttribute('stroke', 'rgba(74, 144, 226, 1)');
+            polygon.setAttribute('stroke-width', '2');
+            polygon.setAttribute('stroke-linejoin', 'round');
+            svg.appendChild(polygon);
+
+            // Point central
+            const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerDot.setAttribute('cx', centerX);
+            centerDot.setAttribute('cy', centerY);
+            centerDot.setAttribute('r', 4);
+            centerDot.setAttribute('fill', '#1E3A5F');
+            svg.appendChild(centerDot);
+
+            // Afficher les stats
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card" style="grid-column: span 2;">
+                    <div class="stat-label">Période analysée</div>
+                    <div class="stat-value" style="font-size: 1.2rem;">${stats.periode}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mesures totales</div>
+                    <div class="stat-value">${stats.total_mesures}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Temp. Moyenne</div>
+                    <div class="stat-value">${stats.temp_moy.toFixed(1)}<span class="stat-unit">°C</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Temp. Min</div>
+                    <div class="stat-value">${stats.temp_min.toFixed(1)}<span class="stat-unit">°C</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Temp. Max</div>
+                    <div class="stat-value">${stats.temp_max.toFixed(1)}<span class="stat-unit">°C</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pluviométrie</div>
+                    <div class="stat-value">${stats.pluie_tot.toFixed(1)}<span class="stat-unit">mm</span></div>
+                </div>
+            `;
+
+            results.classList.add('show');
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
